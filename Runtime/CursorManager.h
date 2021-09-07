@@ -30,10 +30,15 @@ public:
 			//	L"获取鼠标速度失败"
 			//);
 
+			HDC screen = GetDC(NULL);
+			double dpiX = GetDeviceCaps(screen, LOGPIXELSX);
+			double dpiY = GetDeviceCaps(screen, LOGPIXELSY);
+			ReleaseDC(NULL, screen);
+
 			const RECT& srcClient = Env::$instance->GetSrcClient();
 			const D2D_RECT_F& destRect = Env::$instance->GetDestRect();
-			float scaleX = (destRect.right - destRect.left) / (srcClient.right - srcClient.left);
-			float scaleY = (destRect.bottom - destRect.top) / (srcClient.bottom - srcClient.top);
+			float scaleX = (destRect.right - destRect.left) / (srcClient.right - srcClient.left) / (dpiX / 96);
+			float scaleY = (destRect.bottom - destRect.top) / (srcClient.bottom - srcClient.top) / (dpiY / 96);
 
 			long newSpeed = std::clamp(lroundf(_cursorSpeed / (scaleX + scaleY) * 2), 1L, 20L);
 			//Debug::ThrowIfWin32Failed(
@@ -129,11 +134,16 @@ public:
 			return;
 		}
 
+		HDC screen = GetDC(NULL);
+		double dpiX = GetDeviceCaps(screen, LOGPIXELSX);
+		double dpiY = GetDeviceCaps(screen, LOGPIXELSY);
+		ReleaseDC(NULL, screen);
+
 		D2D1_RECT_F cursorRect = {
 			FLOAT(_targetScreenPos.x),
 			FLOAT(_targetScreenPos.y),
-			FLOAT(_targetScreenPos.x + _cursorInfo->width),
-			FLOAT(_targetScreenPos.y + _cursorInfo->height)
+			FLOAT(_targetScreenPos.x + _cursorInfo->width * (dpiX / 96)),
+			FLOAT(_targetScreenPos.y + _cursorInfo->height * (dpiY / 96))
 		};
 
 		Env::$instance->GetD2DDC()->DrawBitmap(_cursorInfo->bmp.Get(), &cursorRect);
